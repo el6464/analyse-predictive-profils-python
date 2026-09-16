@@ -1,65 +1,90 @@
-# ============================================================
-# EVALUATION DES MODELES
-# ============================================================
-
 import pandas as pd
+import matplotlib.pyplot as plt
 
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
     accuracy_score,
-    precision_score,
-    recall_score,
-    f1_score,
-    confusion_matrix
+    classification_report,
+    confusion_matrix,
+    ConfusionMatrixDisplay
 )
 
+# ============================================================
+# Chargement
+# ============================================================
 
-def evaluate_model(model, X_test, y_test):
+X_train = pd.read_csv("X_train.csv")
+X_test = pd.read_csv("X_test.csv")
 
-    predictions = model.predict(X_test)
+y_train = pd.read_csv("y_train.csv").iloc[:, 0]
+y_test = pd.read_csv("y_test.csv").iloc[:, 0]
 
-    results = {
+# ============================================================
+# Modèle
+# ============================================================
 
-        "accuracy":
-            accuracy_score(
-                y_test,
-                predictions
-            ),
+model = RandomForestClassifier(
+    n_estimators=300,
+    random_state=42
+)
 
-        "precision":
-            precision_score(
-                y_test,
-                predictions,
-                average="weighted",
-                zero_division=0
-            ),
+model.fit(X_train, y_train)
 
-        "recall":
-            recall_score(
-                y_test,
-                predictions,
-                average="weighted",
-                zero_division=0
-            ),
+predictions = model.predict(X_test)
 
-        "f1_score":
-            f1_score(
-                y_test,
-                predictions,
-                average="weighted",
-                zero_division=0
-            )
-    }
+# ============================================================
+# Accuracy
+# ============================================================
 
-    return results, predictions
+accuracy = accuracy_score(
+    y_test,
+    predictions
+)
 
+print("=" * 60)
+print("ÉVALUATION DU RANDOM FOREST")
+print("=" * 60)
 
-def compare_models(results):
+print(f"\nAccuracy : {accuracy:.4f}")
 
-    comparison = pd.DataFrame(
-        results
-    ).T
+# ============================================================
+# Classification report
+# ============================================================
 
-    return comparison.sort_values(
-        by="f1_score",
-        ascending=False
+print("\n--- Classification report ---")
+
+print(
+    classification_report(
+        y_test,
+        predictions
     )
+)
+
+# ============================================================
+# Matrice de confusion
+# ============================================================
+
+cm = confusion_matrix(
+    y_test,
+    predictions
+)
+
+disp = ConfusionMatrixDisplay(
+    confusion_matrix=cm
+)
+
+disp.plot()
+
+plt.title("Matrice de confusion - Random Forest")
+
+plt.tight_layout()
+
+plt.savefig(
+    "results/matrice_confusion.png",
+    dpi=300,
+    bbox_inches="tight"
+)
+
+plt.close()
+
+print("\nMatrice de confusion enregistrée.")
