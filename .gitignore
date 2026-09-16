@@ -1,12 +1,6 @@
 __pycache__/
-*.py[cod]
-
-.ipynb_checkpoints/
-
-.env
+*.pyc
 .venv/
 venv/
-
-
-outputs/models/*
-outputs/figures/*
+.env
+.ipynb_checkpoints/
