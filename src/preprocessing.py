@@ -1,74 +1,95 @@
-# ============================================================
-# PREPROCESSING
-# Analyse prédictive des profils et compétences
-# ============================================================
-
 import pandas as pd
+from pathlib import Path
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
+# ============================================================
+# Configuration
+# ============================================================
 
-def load_data(path):
-    """
-    Charge le jeu de données.
-    """
-    return pd.read_csv(path)
+DATA_PATH = Path("data/Student Placement.csv")
 
+# ============================================================
+# Chargement
+# ============================================================
 
-def basic_cleaning(df):
-    """
-    Nettoyage de base :
-    - suppression des doublons
-    - suppression des lignes entièrement vides
-    """
-    df = df.copy()
+df = pd.read_csv(DATA_PATH)
 
-    df = df.drop_duplicates()
-    df = df.dropna(how="all")
+# ============================================================
+# Suppression des doublons
+# ============================================================
 
-    return df
+df = df.drop_duplicates()
 
+# ============================================================
+# Variables
+# ============================================================
 
-def encode_categorical_variables(df):
-    """
-    Encode les variables catégorielles.
-    """
-    df = df.copy()
+target = "Profile"
 
-    encoders = {}
+X = df.drop(columns=[target])
+y = df[target]
 
-    categorical_columns = df.select_dtypes(
-        include=["object", "category"]
-    ).columns
+# ============================================================
+# Encodage des variables catégorielles
+# ============================================================
 
-    for column in categorical_columns:
+categorical_columns = X.select_dtypes(include="object").columns
 
-        encoder = LabelEncoder()
+X = pd.get_dummies(
+    X,
+    columns=categorical_columns,
+    drop_first=False
+)
 
-        df[column] = encoder.fit_transform(
-            df[column].astype(str)
-        )
+# ============================================================
+# Encodage de la variable cible
+# ============================================================
 
-        encoders[column] = encoder
+label_encoder = LabelEncoder()
 
-    return df, encoders
+y_encoded = label_encoder.fit_transform(y)
 
+# ============================================================
+# Séparation train / test
+# ============================================================
 
-def split_data(df, target_column, test_size=0.2):
-    """
-    Sépare les variables explicatives et la variable cible,
-    puis crée les ensembles d'entraînement et de test.
-    """
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y_encoded,
+    test_size=0.20,
+    random_state=42,
+    stratify=y_encoded
+)
 
-    X = df.drop(columns=[target_column])
-    y = df[target_column]
+# ============================================================
+# Sauvegarde
+# ============================================================
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X,
-        y,
-        test_size=test_size,
-        random_state=42,
-        stratify=y
-    )
+X_train.to_csv(
+    "X_train.csv",
+    index=False
+)
 
-    return X_train, X_test, y_train, y_test
+X_test.to_csv(
+    "X_test.csv",
+    index=False
+)
+
+pd.DataFrame({"Profile": y_train}).to_csv(
+    "y_train.csv",
+    index=False
+)
+
+pd.DataFrame({"Profile": y_test}).to_csv(
+    "y_test.csv",
+    index=False
+)
+
+print("Préparation terminée.")
+print(f"Train : {X_train.shape}")
+print(f"Test  : {X_test.shape}")
+
+print("\nProfils :")
+for i, label in enumerate(label_encoder.classes_):
+    print(i, "=", label)
